@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="强大的HTML编辑器，支持本地文件操作和实时预览">
+    
+    <!-- PWA 必须的 meta 标签 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="HTML编辑器">
+    <meta name="apple-mobile-web-app-title" content="HTML编辑器">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- manifest.json 路径 -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- 图标（必须为 PNG 格式） -->
+    <link rel="icon" href="/icon.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <title>HTML编辑器</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 10px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 10px;
+        }
+
+        .app-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .app-header p {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .editor-container {
+            display: flex;
+            gap: 10px;
+            height: 85vh;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0;
+            flex: 1;
+        }
+
+        .panel-header {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h3 {
+            color: #333;
+            font-size: 1em;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            padding: 5px;
+            background: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .toolbar-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .code-editor {
+            flex: 1;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            border: none;
+            resize: none;
+            outline: none;
+            background: #f8f9fa;
+            overflow: auto;
+        }
+
+        .preview-container {
+            flex: 1;
+            background: white;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        .preview-content {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .file-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .status-bar {
+            margin-top: 10px;
+            text-align: center;
+            color: white;
+            font-size: 0.75em;
+            opacity: 0.8;
+            padding: 5px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+                height: 90vh;
+                gap: 5px;
+            }
+            .code-editor {
+                padding: 15px;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+        }
+
+        .highlight {
+            color: #e74c3c;
+        }
+
+        .tag {
+            color: #3498db;
+        }
+
+        .attr {
+            color: #27ae60;
+        }
+
+        .comment {
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <h1><i class="fas fa-code"></i> HTML编辑器</h1>
+            <p>实时预览的现代化HTML编辑器</p>
+        </div>
+
+        <div class="editor-container">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>代码编辑器</h3>
+                    <div class="editor-toolbar">
+                        <button class="toolbar-btn" onclick="formatCode()"><i class="fas fa-indent"></i> 格式化</button>
+                        <button class="toolbar-btn" onclick="toggleComment()"><i class="fas fa-comment"></i> 注释</button>
+                        <button class="toolbar-btn" onclick="insertTemplate()"><i class="fas fa-plus"></i> 模板</button>
+                    </div>
+                </div>
+                <div style="position: relative; height: 100%;">
+                    <textarea id="codeEditor" class="code-editor" spellcheck="false"></textarea>
+                    <div id="placeholderText" class="placeholder-text">在此输入HTML代码或点击"打开文件"导入本地文件...</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>实时预览</h3>
+                </div>
+                <div class="preview-container">
+                    <iframe id="preview" class="preview-content" sandbox="allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="file" id="fileInput" accept=".html,.htm" style="display:none;" onchange="handleFileSelect(event)">
+            <button class="file-btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-folder-open"></i> 打开文件
+            </button>
+            <button class="action-btn save-btn" onclick="saveCode()">
+                <i class="fas fa-save"></i> 保存文件
+            </button>
+            <button class="action-btn clear-btn" onclick="clearCode()">
+                <i class="fas fa-trash"></i> 清空代码
+            </button>
+            <button class="action-btn reset-btn" onclick="resetEditor()">
+                <i class="fas fa-redo"></i> 重置编辑器
+            </button>
+        </div>
+
+        <div class="status-bar">
+            <p>编辑器状态: <span id="statusText">就绪</span> | 
+               字符数: <span id="charCount">0</span> | 
+               行数: <span id="lineCount">1</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Web App Manifest -->
+    <script>
+        // 初始化编辑器内容
+        const codeEditor = document.getElementById('codeEditor');
+        const preview = document.getElementById('preview');
+        const statusText = document.getElementById('statusText');
+        const charCount = document.getElementById('charCount');
+        const lineCount = document.getElementById('lineCount');
+        const placeholderText = document.getElementById('placeholderText');
+
+        // 默认HTML模板
+        const defaultHTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎来到我的网站</h1>
+        <p>这是一个使用HTML编辑器创建的网页。</p>
+        <p>你可以在这里添加任何HTML内容。</p>
+        
+        <h2>功能特性</h2>
+        <ul>
+            <li>实时预览</li>
+            <li>代码高亮</li>
+            <li>保存功能</li>
+            <li>格式化工具</li>
+            <li>本地文件支持</li>
+        </ul>
+        <button onclick="alert('Hello World!')">点击测试</button>
+    </div>
+</body>
+</html>`;
+
+        codeEditor.value = defaultHTML;
+        updatePreview();
+        updateStatus();
+
+        // 更新预览
+        function updatePreview() {
+            const content = codeEditor.value;
+            preview.contentDocument.open();
+            preview.contentDocument.write(content);
+            preview.contentDocument.close();
+            updateStatus();
+        }
+
+        // 更新状态栏
+        function updateStatus() {
+            const content = codeEditor.value;
+            charCount.textContent = content.length;
+            lineCount.textContent = content.split('\n').length;
+            statusText.textContent = '就绪';
+        }
+
+        // 实时更新预览
+        codeEditor.addEventListener('input', function() {
+            statusText.textContent = '正在更新预览...';
+            setTimeout(updatePreview, 100);
+            updateStatus();
+            if (codeEditor.value.trim() === '') {
+                placeholderText.style.display = 'block';
+            } else {
+                placeholderText.style.display = 'none';
+            }
+        });
+
+        // 保存代码（触发下载）
+        function saveCode() {
+            const content = codeEditor.value;
+            const blob = new Blob([content], {type: "text/html;charset=utf-8"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "my-page.html";
+            link.click();
+        }
+
+        // 清空代码
+        function clearCode() {
+            if (confirm('确定要清空所有代码吗？')) {
+                codeEditor.value = '';
+                updatePreview();
+                statusText.textContent = '代码已清空';
+            }
+        }
+
+        // 重置编辑器
+        function resetEditor() {
+            if (confirm('确定要重置编辑器到默认状态吗？')) {
+                codeEditor.value = defaultHTML;
+                updatePreview();
+                statusText.textContent = '编辑器已重置';
+            }
+        }
+
+        // 格式化HTML代码
+        function formatCode() {
+            const code = codeEditor.value;
+            const formatted = formatHTML(code);
+            codeEditor.value = formatted;
+            updatePreview();
+            statusText.textContent = '代码已格式化';
+            setTimeout(() => {
+                statusText.textContent = '就绪';
+            }, 2000);
+        }
+
+        // 简单的HTML格式化函数
+        function formatHTML(html) {
+            let formatted = '';
+            let indent = 0;
+            const lines = html.split('\n');
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.includes('</') && !line.includes('<!')) {
+                    indent--;
+                }
+                formatted += ' '.repeat(indent * 2) + line + '\n';
+                if (line.includes('<') && !line.includes('</') && !line.includes('>') && !line.includes('!')) {
+                    indent++;
+                }
+            });
+            
+            return formatted.trim();
+        }
+
+        // 切换注释
+        function toggleComment() {
+            const selection = codeEditor.value.substring(codeEditor.selectionStart, codeEditor.selectionEnd);
+            if (selection && !selection.startsWith('<!--')) {
+                const commented = '<!-- ' + selection + ' -->';
+                const before = codeEditor.value.substring(0, codeEditor.selectionStart);
+                const after = codeEditor.value.substring(codeEditor.selectionEnd);
+                codeEditor.value = before + commented + after;
+                updatePreview();
+                statusText.textContent = '已添加注释';
+            } else {
+                statusText.textContent = '请先选择要注释的代码';
+            }
+            setTimeout(() => { statusText.textContent = '就绪'; }, 2000);
+        }
+
+        // 插入模板
+        function insertTemplate() {
+            const template = `<!-- 网页基础结构 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新网页</title>
+</head>
+<body>
+    
+</body>
+</html>`;
+
+            const cursorPos = codeEditor.selectionStart;
+            const before = codeEditor.value.substring(0, cursorPos);
+            const after = codeEditor.value.substring(cursorPos);
+            codeEditor.value = before + template + after;
+            updatePreview();
+            statusText.textContent = '已添加模板';
+            setTimeout(() => { statusText.textContent = '就绪'; }, 2000);
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    codeEditor.value = content;
+                    updatePreview();
+                    statusText.textContent = '已打开文件';
+                    setTimeout(() => { statusText.textContent = '就绪'; }, 2000);
+                };
+                reader.readAsText(file);
+            } else {
+                statusText.textContent = '请选择HTML文件';
+                setTimeout(() => { statusText.textContent = '就绪'; }, 2000);
+            }
+        }
+    </script>
+
+    <!-- PWA manifest.json 内容 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(function (error) {
+                console.log('ServiceWorker 注册失败:', error);
+            });
+        }
+    </script>
+</body>
+</html>
